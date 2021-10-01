@@ -44,7 +44,6 @@ use function file_get_contents;
 use function hash;
 use function implode;
 use function is_file;
-use function json_decode;
 use function json_encode;
 use function md5;
 use function str_ends_with;
@@ -102,8 +101,7 @@ class ResourcePack implements IResourcePack{
             if(is_file($realPath)){
                 $contents = file_get_contents($realPath);
                 if(str_ends_with($realPath, ".json")){
-                    $json = json_decode($contents, true);
-                    $contents = json_encode($json, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                    $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 }
                 $archive->addFromString($innerPath, $contents);
 
