@@ -1,9 +1,9 @@
 ---
-name: AddonsManager
-main: kim\present\addonsmanager\Loader
+name: refAddonsManager
+main: ref\register\addons\Main
 version: 1.0.1
 api: [ 4.0.0 ]
-author: PresentKim
-description: Manager of Addons(ResourcePak and BehaviorPack)
-mcpe-protocol: [ 465 ]
+authors: [ref-team, PresentKim ]
+description: Manager of Addons(ResourcePack and BehaviorPack)
+mcpe-protocol: [ 471 ]
 ...

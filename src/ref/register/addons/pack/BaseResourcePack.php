@@ -1,41 +1,33 @@
 <?php
 
-/**
- *  ____                           _   _  ___
- * |  _ \ _ __ ___  ___  ___ _ __ | |_| |/ (_)_ __ ___
- * | |_) | '__/ _ \/ __|/ _ \ '_ \| __| ' /| | '_ ` _ \
- * |  __/| | |  __/\__ \  __/ | | | |_| . \| | | | | | |
- * |_|   |_|  \___||___/\___|_| |_|\__|_|\_\_|_| |_| |_|
+/**            __   _____
+ *  _ __ ___ / _| |_   _|__  __ _ _ __ ___
+ * | '__/ _ \ |_    | |/ _ \/ _` | '_ ` _ \
+ * | | |  __/  _|   | |  __/ (_| | | | | | |
+ * |_|  \___|_|     |_|\___|\__,_|_| |_| |_|
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * @author  ref-team
+ * @link    https://github.com/ref-plugin
  *
- * @author  PresentKim (debe3721@gmail.com)
- * @link    https://github.com/PresentKim
- * @license https://www.gnu.org/licenses/lgpl-3.0 LGPL-3.0 License
+ *  &   ／l、
+ *    （ﾟ､ ｡ ７
+ *   　\、ﾞ ~ヽ   *
+ *   　じしf_, )ノ
  *
- *   (\ /)
- *  ( . .) ♥
- *  c(")(")
- *
- * @noinspection PhpIllegalPsrClassPathInspection
- * @noinspection SpellCheckingInspection
  * @noinspection PhpUnused
  */
 
 declare(strict_types=1);
 
-namespace kim\present\addonsmanager\resourcepack;
+namespace ref\register\addons\pack;
 
 use Ahc\Json\Comment as CommentedJsonDecoder;
 use InvalidArgumentException;
-use kim\present\addonsmanager\Loader;
 use pocketmine\resourcepacks\ResourcePack as IResourcePack;
 use pocketmine\resourcepacks\ResourcePackException;
 use pocketmine\Server;
 use Ramsey\Uuid\Uuid;
+use ref\register\addons\Main;
 use RuntimeException;
 use ZipArchive;
 
@@ -50,7 +42,7 @@ use function str_ends_with;
 use function strlen;
 use function substr;
 
-class ResourcePack implements IResourcePack{
+class BaseResourcePack implements IResourcePack{
     protected string $name;
     protected string $id;
     protected string $version;
@@ -92,7 +84,7 @@ class ResourcePack implements IResourcePack{
         $this->version = implode(".", $header["version"]);
         $this->id = $header["uuid"];
 
-        $tmp = Loader::cleanDirName(Server::getInstance()->getDataPath()) . "\$TEMP_" . md5($manifestPath) . ".zip";
+        $tmp = Main::cleanDirName(Server::getInstance()->getDataPath()) . "\$TEMP_" . md5($manifestPath) . ".zip";
         $fullContents = "";
 
         $archive = new ZipArchive();
