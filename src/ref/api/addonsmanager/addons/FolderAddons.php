@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace ref\api\addonsmanager\pack;
+namespace ref\api\addonsmanager\addons;
 
 use pocketmine\resourcepacks\ResourcePackException;
 use RecursiveDirectoryIterator;
@@ -30,7 +30,7 @@ use Webmozart\PathUtil\Path;
 use function file_exists;
 use function is_dir;
 
-class FolderResourcePack extends BaseResourcePack{
+class FolderAddons extends Addons{
     /** @throws ResourcePackException */
     public function __construct(string $dir){
         $dir = Path::canonicalize($dir) . "/";

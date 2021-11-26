@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace ref\api\addonsmanager\pack;
+namespace ref\api\addonsmanager\addons;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\resourcepacks\ResourcePackException;
@@ -27,7 +27,7 @@ use Webmozart\PathUtil\Path;
 
 use function str_starts_with;
 
-class PluginResourcePack extends BaseResourcePack{
+class PluginAddons extends Addons{
     /** @throws ResourcePackException */
     public function __construct(PluginBase $plugin, string $innerDir){
         $innerDir = Path::canonicalize($innerDir) . "/";
