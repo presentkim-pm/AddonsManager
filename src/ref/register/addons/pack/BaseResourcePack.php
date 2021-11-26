@@ -27,8 +27,8 @@ use pocketmine\resourcepacks\ResourcePack as IResourcePack;
 use pocketmine\resourcepacks\ResourcePackException;
 use pocketmine\Server;
 use Ramsey\Uuid\Uuid;
-use ref\register\addons\Main;
 use RuntimeException;
+use Webmozart\PathUtil\Path;
 use ZipArchive;
 
 use function file_exists;
@@ -41,8 +41,11 @@ use function md5;
 use function str_ends_with;
 use function strlen;
 use function substr;
+use function unlink;
 
 class BaseResourcePack implements IResourcePack{
+    public const MANIFEST_FILE = "manifest.json";
+
     protected string $name;
     protected string $id;
     protected string $version;
@@ -56,9 +59,12 @@ class BaseResourcePack implements IResourcePack{
      * @throws ResourcePackException
      */
     protected function __construct(array $files){
-        if(!isset($files["manifest.json"]) || !file_exists($manifestPath = $files["manifest.json"])){
+        if(!isset($files[self::MANIFEST_FILE]) || !file_exists($manifestPath = $files[self::MANIFEST_FILE])){
             throw new ResourcePackException("manifest.json not found in the pack");
-        }elseif(($manifestData = file_get_contents($manifestPath)) === false){
+        }
+
+        $manifestData = file_get_contents($manifestPath);
+        if($manifestData === false){
             throw new ResourcePackException("Failed to open manifest.json file.");
         }
 
@@ -67,15 +73,15 @@ class BaseResourcePack implements IResourcePack{
         }catch(RuntimeException $e){
             throw new ResourcePackException("Failed to parse manifest.json: " . $e->getMessage(), $e->getCode(), $e);
         }finally{
-            unset($files["manifest.json"]);
+            unset($files[self::MANIFEST_FILE]);
         }
 
-        if(!isset($manifest["header"]) ||
-            !isset($manifest["header"]["name"]) ||
-            !isset($manifest["header"]["uuid"]) ||
-            !isset($manifest["header"]["version"]) ||
-            !isset($manifest["modules"])
-        ){
+        if(!isset(
+            $manifest["header"]["name"],
+            $manifest["header"]["uuid"],
+            $manifest["header"]["version"],
+            $manifest["modules"]
+        )){
             throw new ResourcePackException("manifest.json is missing required fields");
         }
 
@@ -84,7 +90,7 @@ class BaseResourcePack implements IResourcePack{
         $this->version = implode(".", $header["version"]);
         $this->id = $header["uuid"];
 
-        $tmp = Main::cleanDirName(Server::getInstance()->getDataPath()) . "\$TEMP_" . md5($manifestPath) . ".zip";
+        $tmp = Path::canonicalize(Server::getInstance()->getDataPath()) . "/\$TEMP_" . md5($manifestPath) . ".zip";
         $fullContents = "";
 
         $archive = new ZipArchive();
@@ -112,7 +118,7 @@ class BaseResourcePack implements IResourcePack{
                 }
             }
         }
-        $archive->addFromString("manifest.json", json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $archive->addFromString(self::MANIFEST_FILE, json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         $archive->close();
 
         $this->contents = file_get_contents($tmp);

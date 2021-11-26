@@ -24,9 +24,9 @@ namespace ref\register\addons;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\BehaviorPackInfoEntry;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackStackEntry;
 use pocketmine\resourcepacks\ResourcePack;
+use pocketmine\resourcepacks\ResourcePackManager;
 use pocketmine\Server;
 use pocketmine\utils\SingletonTrait;
-use PrefixedLogger;
 
 use function array_keys;
 use function array_values;
@@ -35,7 +35,7 @@ use function strtolower;
 final class AddonsManager{
     use SingletonTrait;
 
-    private PrefixedLogger $logger;
+    private ResourcePackManager $resourcePackManager;
 
     /** @var array<string, ResourcePack> */
     private array $behaviorPacks = [];
@@ -47,7 +47,7 @@ final class AddonsManager{
     private array $behaviorInfoEntries = [];
 
     public function __construct(){
-        $this->logger = new PrefixedLogger(Server::getInstance()->getLogger(), "AddonsManager");
+        $this->resourcePackManager = Server::getInstance()->getResourcePackManager();
     }
 
     /** @return ResourcePack[] */
@@ -57,7 +57,7 @@ final class AddonsManager{
 
     /** @return ResourcePack[] */
     public function getResourcePacks() : array{
-        return Server::getInstance()->getResourcePackManager()->getResourceStack();
+        return $this->resourcePackManager->getResourceStack();
     }
 
     /** @return string[] */
@@ -67,7 +67,7 @@ final class AddonsManager{
 
     /** @return string[] */
     public function getResourceIds() : array{
-        return Server::getInstance()->getResourcePackManager()->getPackIdList();
+        return $this->resourcePackManager->getPackIdList();
     }
 
     /** Returns the behavior pack matching the specified UUID string, or null if the ID was not recognized. */
@@ -77,7 +77,7 @@ final class AddonsManager{
 
     /** Returns the resource pack matching the specified UUID string, or null if the ID was not recognized. */
     public function getResourcePack(string $id) : ?ResourcePack{
-        return Server::getInstance()->getResourcePackManager()->getPackById($id);
+        return $this->resourcePackManager->getPackById($id);
     }
 
     /** @return $this */
@@ -87,11 +87,8 @@ final class AddonsManager{
 
         //register entry caches also
         $version = $pack->getPackVersion();
-        $size = $pack->getPackSize();
         $this->behaviorStackEntries[$uuid] = new ResourcePackStackEntry($uuid, $version, "");
-        $this->behaviorInfoEntries[$uuid] = new BehaviorPackInfoEntry($uuid, $version, $size, "", "", "", false);
-
-        $this->logger->debug("Behavior pack registered : {$pack->getPackName()}_v$version [$uuid](size: $size bytes)");
+        $this->behaviorInfoEntries[$uuid] = new BehaviorPackInfoEntry($uuid, $version, $pack->getPackSize(), "", "", "", false);
         return $this;
     }
 
@@ -106,9 +103,7 @@ final class AddonsManager{
             /** @see ResourcePackManager::uuidList */
             $this->resourcePacks[] = $pack;
             $this->uuidList[$uuid] = $pack;
-        })->call(Server::getInstance()->getResourcePackManager());
-
-        $this->logger->debug("Resource pack registered : {$pack->getPackName()}_v{$pack->getPackVersion()} [$uuid] (size: {$pack->getPackSize()} bytes)");
+        })->call($this->resourcePackManager);
         return $this;
     }
 

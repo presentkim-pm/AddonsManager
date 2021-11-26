@@ -21,26 +21,23 @@ declare(strict_types=1);
 
 namespace ref\register\addons\pack;
 
-use ref\register\addons\Main;
 use pocketmine\plugin\PluginBase;
 use pocketmine\resourcepacks\ResourcePackException;
+use Webmozart\PathUtil\Path;
 
-use function str_replace;
 use function str_starts_with;
-use function strlen;
-use function substr;
 
 class PluginResourcePack extends BaseResourcePack{
     /** @throws ResourcePackException */
     public function __construct(PluginBase $plugin, string $innerDir){
-        $innerDir = Main::cleanDirName($innerDir);
+        $innerDir = Path::canonicalize($innerDir) . "/";
         $filePaths = [];
 
         foreach($plugin->getResources() as $key => $fileInfo){
-            $path = str_replace("\\", "/", $key);
+            $path = Path::canonicalize($key);
             if(str_starts_with($path, $innerDir)){
                 $realPath = $fileInfo->getPathname();
-                $innerPath = str_replace("\\", "/", substr($path, strlen($innerDir)));
+                $innerPath = Path::makeRelative($path, $innerDir);
 
                 $filePaths[$innerPath] = $realPath;
             }

@@ -31,20 +31,24 @@ use pocketmine\network\mcpe\protocol\ResourcePackDataInfoPacket;
 use pocketmine\network\mcpe\protocol\ResourcePacksInfoPacket;
 use pocketmine\network\mcpe\protocol\ResourcePackStackPacket;
 use pocketmine\network\mcpe\protocol\StartGamePacket;
-use pocketmine\network\mcpe\protocol\types\Experiments;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\plugin\PluginBase;
 use pocketmine\resourcepacks\ResourcePack;
 
 use function ceil;
 use function count;
-use function rtrim;
-use function str_replace;
 use function strpos;
 use function substr;
 
 final class Main extends PluginBase implements Listener{
     private const PACK_CHUNK_SIZE = 128 * 1024; //128KB
+    private const OVERRIDDEN_EXPERIMENTS = [
+        "scripting" => true, // Additional Modding Capabilities
+        "upcoming_creator_features" => true, // Upcoming Creator Features
+        "gametest" => true, // Enable GameTest Framework
+        "data_driven_items" => true, // Holiday Creator Features
+        "experimental_molang_features" => true, // Experimental Molang Features
+    ];
 
     private AddonsManager $addonsManager;
 
@@ -57,23 +61,25 @@ final class Main extends PluginBase implements Listener{
     public function onDataPacketSendEvent(DataPacketSendEvent $event) : void{
         foreach($event->getPackets() as $packet){
             if($packet instanceof ResourcePackStackPacket){
-                $packet->behaviorPackStack = array_merge($packet->behaviorPackStack, $this->addonsManager->getBehaviorPackStackEntries());
+                $packet->behaviorPackStack = [
+                    ...$packet->behaviorPackStack,
+                    ...$this->addonsManager->getBehaviorPackStackEntries()
+                ];
             }elseif($packet instanceof ResourcePacksInfoPacket){
-                $packet->behaviorPackEntries = array_merge($packet->behaviorPackEntries, $this->addonsManager->getBehaviorPackInfoEntries());
+                $packet->behaviorPackEntries = [
+                    ...$packet->behaviorPackEntries,
+                    ...$this->addonsManager->getBehaviorPackInfoEntries()
+                ];
             }elseif($packet instanceof StartGamePacket){
-                (function(){ //HACK : Closure bind hack to access inaccessible members
-                    /**
-                     * @see Experiments::experiments
-                     * @noinspection PhpUndefinedFieldInspection
-                     */
-                    $this->experiments = array_merge($this->experiments, [
-                        "scripting" => true, // Additional Modding Capabilities
-                        "upcoming_creator_features" => true, // Upcoming Creator Features
-                        "gametest" => true, // Enable GameTest Framework
-                        "data_driven_items" => true, // Holiday Creator Features
-                        "experimental_molang_features" => true, // Experimental Molang Features
-                    ]);
-                })->call($packet->levelSettings->experiments);
+                $experiments = $packet->levelSettings->experiments;
+                /**
+                 * @noinspection PhpExpressionResultUnusedInspection
+                 * HACK : Modifying properties using public constructors
+                 */
+                $experiments->__construct(
+                    array_merge($experiments->getExperiments(), self::OVERRIDDEN_EXPERIMENTS),
+                    $experiments->hasPreviouslyUsedExperiments()
+                );
             }
         }
     }
@@ -113,22 +119,17 @@ final class Main extends PluginBase implements Listener{
 
             $session->getLogger()->debug("Player requested download of " . (count($packet->packIds) - count($remained)) . " behavior packs");
             $packet->packIds = $remained;
-        }elseif($packet instanceof ResourcePackChunkRequestPacket){
-            $pack = $this->addonsManager->getBehaviorPack($packet->packId);
-            if($pack instanceof ResourcePack){
-                $event->getOrigin()->sendDataPacket(ResourcePackChunkDataPacket::create(
-                    $pack->getPackId(),
-                    $packet->chunkIndex,
-                    (self::PACK_CHUNK_SIZE * $packet->chunkIndex),
-                    $pack->getPackChunk(self::PACK_CHUNK_SIZE * $packet->chunkIndex, self::PACK_CHUNK_SIZE)
-                ));
-                $event->cancel();
-            }
+        }elseif(
+            $packet instanceof ResourcePackChunkRequestPacket &&
+            ($pack = $this->addonsManager->getBehaviorPack($packet->packId)) instanceof ResourcePack
+        ){
+            $event->getOrigin()->sendDataPacket(ResourcePackChunkDataPacket::create(
+                $pack->getPackId(),
+                $packet->chunkIndex,
+                (self::PACK_CHUNK_SIZE * $packet->chunkIndex),
+                $pack->getPackChunk(self::PACK_CHUNK_SIZE * $packet->chunkIndex, self::PACK_CHUNK_SIZE)
+            ));
+            $event->cancel();
         }
-    }
-
-    /** @internal */
-    public static function cleanDirName(string $path) : string{
-        return rtrim(str_replace("\\", "/", $path), "/") . "/";
     }
 }

@@ -3,7 +3,7 @@ name: refAddonsManager
 main: ref\register\addons\Main
 version: 1.0.1
 api: [ 4.0.0 ]
-authors: [ref-team, PresentKim ]
-description: Manager of Addons(ResourcePack and BehaviorPack)
+authors: [ ref-team, PresentKim ]
+description: A simple add-ons manager (resource pack and behavior pack at once)
 mcpe-protocol: [ 471 ]
 ...
