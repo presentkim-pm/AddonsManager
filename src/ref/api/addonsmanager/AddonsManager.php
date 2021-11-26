@@ -29,6 +29,7 @@ use pocketmine\Server;
 use pocketmine\utils\SingletonTrait;
 
 use function array_keys;
+use function array_search;
 use function array_values;
 use function strtolower;
 
@@ -103,6 +104,39 @@ final class AddonsManager{
             /** @see ResourcePackManager::uuidList */
             $this->resourcePacks[] = $pack;
             $this->uuidList[$uuid] = $pack;
+        })->call($this->resourcePackManager);
+        return $this;
+    }
+
+    /** @return $this */
+    public function unregisterBehaviorPack(ResourcePack $pack) : self{
+        $uuid = strtolower($pack->getPackId());
+        if(isset($this->behaviorPacks[$uuid])){
+            unset(
+                $this->behaviorPacks[$uuid],
+                $this->behaviorStackEntries[$uuid],
+                $this->behaviorInfoEntries[$uuid]
+            );
+        }
+        return $this;
+    }
+
+    /**
+     * @return $this
+     * @noinspection PhpUndefinedFieldInspection
+     */
+    public function unregisterResourcePack(ResourcePack $pack) : self{
+        $uuid = strtolower($pack->getPackId());
+        if($this->resourcePackManager->getPackById($uuid) === null){
+            return $this;
+        }
+        (function() use ($pack, $uuid){ //HACK : Closure bind hack to access inaccessible members
+            /** @see ResourcePackManager::resourcePacks */
+            /** @see ResourcePackManager::uuidList */
+            unset(
+                $this->resourcePacks[array_search($pack, $this->resourcePacks, true)],
+                $this->uuidList[$uuid]
+            );
         })->call($this->resourcePackManager);
         return $this;
     }
