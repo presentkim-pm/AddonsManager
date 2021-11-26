@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace ref\register\addons;
+namespace ref\api\addonsmanager;
 
 use pocketmine\network\mcpe\protocol\types\resourcepacks\BehaviorPackInfoEntry;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackStackEntry;
