@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace ref\register\addons\pack;
+namespace ref\api\addonsmanager\pack;
 
 use Ahc\Json\Comment as CommentedJsonDecoder;
 use InvalidArgumentException;
