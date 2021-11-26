@@ -19,7 +19,7 @@
 
 declare(strict_types=1);
 
-namespace ref\api\addonsmanager\pack;
+namespace ref\api\addonsmanager\addons;
 
 use Ahc\Json\Comment as CommentedJsonDecoder;
 use InvalidArgumentException;
@@ -43,7 +43,7 @@ use function strlen;
 use function substr;
 use function unlink;
 
-class BaseResourcePack implements IResourcePack{
+class Addons implements IResourcePack{
     public const MANIFEST_FILE = "manifest.json";
 
     protected string $name;
