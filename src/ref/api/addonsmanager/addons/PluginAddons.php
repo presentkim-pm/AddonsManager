@@ -12,7 +12,7 @@
  * (at your option) any later version.
  *
  * @author  ref-team
- * @link    https://github.com/ref-plugin
+ * @link    https://github.com/refteams
  *
  *  &   ／l、
  *    （ﾟ､ ｡ ７
