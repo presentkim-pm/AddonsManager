@@ -36,11 +36,9 @@ use RuntimeException;
 use Webmozart\PathUtil\Path;
 use ZipArchive;
 
-use function file_exists;
 use function file_get_contents;
 use function hash;
 use function implode;
-use function is_file;
 use function json_encode;
 use function md5;
 use function str_ends_with;
@@ -59,22 +57,18 @@ class Addons implements IResourcePack{
     protected string $contents;
 
     /**
-     * @param array<string, string> $files innerPath => realPath
+     * @param array<string, string> $files innerPath => fileContents
      *
      * @throws ResourcePackException
      */
     protected function __construct(array $files){
-        if(!isset($files[self::MANIFEST_FILE]) || !file_exists($manifestPath = $files[self::MANIFEST_FILE])){
+        $manifestFile = $files[self::MANIFEST_FILE] ?? null;
+        if($manifestFile === null){
             throw new ResourcePackException("manifest.json not found in the pack");
         }
 
-        $manifestData = file_get_contents($manifestPath);
-        if($manifestData === false){
-            throw new ResourcePackException("Failed to open manifest.json file.");
-        }
-
         try{
-            $manifest = (new CommentedJsonDecoder())->decode($manifestData, true);
+            $manifest = (new CommentedJsonDecoder())->decode($manifestFile, true);
         }catch(RuntimeException $e){
             throw new ResourcePackException("Failed to parse manifest.json: " . $e->getMessage(), $e->getCode(), $e);
         }finally{
@@ -95,21 +89,18 @@ class Addons implements IResourcePack{
         $this->version = implode(".", $header["version"]);
         $this->id = $header["uuid"];
 
-        $tmp = Path::canonicalize(Server::getInstance()->getDataPath()) . "/\$TEMP_" . md5($manifestPath) . ".zip";
+        $tmp = Path::canonicalize(Server::getInstance()->getDataPath()) . "/\$TEMP_" . md5($manifestFile) . ".zip";
         $fullContents = "";
 
         $archive = new ZipArchive();
         $archive->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-        foreach($files as $innerPath => $realPath){
-            if(is_file($realPath)){
-                $contents = file_get_contents($realPath);
-                if(str_ends_with($realPath, ".json")){
-                    $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-                }
-                $archive->addFromString($innerPath, $contents);
-
-                $fullContents .= $contents;
+        foreach($files as $innerPath => $contents){
+            if(str_ends_with($contents, ".json")){
+                $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
+            $archive->addFromString($innerPath, $contents);
+
+            $fullContents .= $contents;
         }
 
         if($this->id === "00000000-0000-0000-0000-000000000000"){

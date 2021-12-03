@@ -30,23 +30,28 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\resourcepacks\ResourcePackException;
 use Webmozart\PathUtil\Path;
 
+use function file_get_contents;
 use function str_starts_with;
 
 class PluginAddons extends Addons{
     /** @throws ResourcePackException */
     public function __construct(PluginBase $plugin, string $innerDir){
-        $innerDir = Path::canonicalize($innerDir) . "/";
-        $filePaths = [];
+        $baseDir = Path::canonicalize($innerDir) . "/";
+        $files = [];
 
         foreach($plugin->getResources() as $key => $fileInfo){
             $path = Path::canonicalize($key);
-            if(str_starts_with($path, $innerDir)){
+            if(str_starts_with($path, $baseDir)){
                 $realPath = $fileInfo->getPathname();
-                $innerPath = Path::makeRelative($path, $innerDir);
+                $innerPath = Path::makeRelative($path, $baseDir);
 
-                $filePaths[$innerPath] = $realPath;
+                $contents = file_get_contents($realPath);
+                if($contents === false){
+                    throw new ResourcePackException("Failed to open $realPath file");
+                }
+                $files[$innerPath] = $contents;
             }
         }
-        parent::__construct($filePaths);
+        parent::__construct($files);
     }
 }
