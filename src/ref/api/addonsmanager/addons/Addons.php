@@ -28,33 +28,37 @@ namespace ref\api\addonsmanager\addons;
 
 use Ahc\Json\Comment as CommentedJsonDecoder;
 use InvalidArgumentException;
+use JsonMapper;
+use JsonMapper_Exception as JsonMapperException;
+use pocketmine\resourcepacks\json\Manifest;
 use pocketmine\resourcepacks\ResourcePack as IResourcePack;
 use pocketmine\resourcepacks\ResourcePackException;
 use pocketmine\Server;
 use Ramsey\Uuid\Uuid;
 use RuntimeException;
+use stdClass;
 use Webmozart\PathUtil\Path;
 use ZipArchive;
 
 use function file_get_contents;
+use function gettype;
 use function hash;
 use function implode;
 use function json_encode;
 use function md5;
+use function serialize;
 use function str_ends_with;
 use function strlen;
 use function substr;
-use function unlink;
+use function unserialize;
 
 class Addons implements IResourcePack{
     public const MANIFEST_FILE = "manifest.json";
 
-    protected string $name;
-    protected string $id;
-    protected string $version;
-    protected string $sha256;
+    protected Manifest $manifest;
 
     protected string $contents;
+    protected string $sha256;
 
     /**
      * @param array<string, string> $files innerPath => fileContents
@@ -68,26 +72,21 @@ class Addons implements IResourcePack{
         }
 
         try{
-            $manifest = (new CommentedJsonDecoder())->decode($manifestFile, true);
+            $manifestJson = (new CommentedJsonDecoder())->decode($manifestFile);
+            if(!($manifestJson instanceof stdClass)){
+                throw new RuntimeException("manifest.json should contain a JSON object, not " . gettype($manifestJson));
+            }
+
+            $mapper = new JsonMapper();
+            $mapper->bExceptionOnUndefinedProperty = true;
+            $mapper->bExceptionOnMissingData = true;
+
+            $this->manifest = $mapper->map($manifestJson, new Manifest());
         }catch(RuntimeException $e){
             throw new ResourcePackException("Failed to parse manifest.json: " . $e->getMessage(), $e->getCode(), $e);
-        }finally{
-            unset($files[self::MANIFEST_FILE]);
+        }catch(JsonMapperException $e){
+            throw new ResourcePackException("Invalid manifest.json contents: " . $e->getMessage(), 0, $e);
         }
-
-        if(!isset(
-            $manifest["header"]["name"],
-            $manifest["header"]["uuid"],
-            $manifest["header"]["version"],
-            $manifest["modules"]
-        )){
-            throw new ResourcePackException("manifest.json is missing required fields");
-        }
-
-        $header = $manifest["header"];
-        $this->name = $header["name"];
-        $this->version = implode(".", $header["version"]);
-        $this->id = $header["uuid"];
 
         $tmp = Path::canonicalize(Server::getInstance()->getDataPath()) . "/\$TEMP_" . md5($manifestFile) . ".zip";
         $fullContents = "";
@@ -103,33 +102,35 @@ class Addons implements IResourcePack{
             $fullContents .= $contents;
         }
 
-        if($this->id === "00000000-0000-0000-0000-000000000000"){
-            $this->id = Uuid::fromString(md5($fullContents))->toString();
-            $manifest["header"]["uuid"] = $this->id;
-            if(isset($manifest["modules"])){
-                foreach($manifest["modules"] as $key => $module){
-                    if($manifest["modules"][$key]["uuid"] === "00000000-0000-0000-0000-000000000000"){
-                        $manifest["modules"][$key]["uuid"] = UUID::fromString(md5($fullContents . $key))->toString();
-                    }
+        if($this->getPackId() === "00000000-0000-0000-0000-000000000000"){
+            $this->manifest->header->uuid = Uuid::fromString(md5($fullContents))->toString();
+            foreach($this->manifest->modules as $key => $module){
+                if($module->uuid === "00000000-0000-0000-0000-000000000000"){
+                    $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
                 }
             }
         }
-        $archive->addFromString(self::MANIFEST_FILE, json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $archive->addFromString(self::MANIFEST_FILE, json_encode($this->manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         $archive->close();
 
         $this->contents = file_get_contents($tmp);
         $this->sha256 = hash("sha256", $this->contents, true);
-        unlink($tmp);
+    }
+
+    /** Returns the Manifest object of the ResourcePack. */
+    public function getManifest() : Manifest{
+        // HACK: Deserialize after serialization for deep copy
+        return unserialize(serialize($this->manifest), ['allowed_classes' => true]);
     }
 
     /** Returns the human-readable name of the resource pack */
     public function getPackName() : string{
-        return $this->name;
+        return $this->manifest->header->name;
     }
 
     /** Returns the pack's UUID as a human-readable string */
     public function getPackId() : string{
-        return $this->id;
+        return $this->manifest->header->uuid;
     }
 
     /** Returns the size of the pack on disk in bytes. */
@@ -139,7 +140,7 @@ class Addons implements IResourcePack{
 
     /** Returns a version number for the pack in the format major.minor.patch */
     public function getPackVersion() : string{
-        return $this->version;
+        return implode(".", $this->manifest->header->version);
     }
 
     /**
