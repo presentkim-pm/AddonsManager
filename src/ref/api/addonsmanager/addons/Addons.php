@@ -68,7 +68,7 @@ class Addons implements IResourcePack{
     protected function __construct(array $files){
         $manifestFile = $files[self::MANIFEST_FILE] ?? null;
         if($manifestFile === null){
-            throw new ResourcePackException("manifest.json not found in the pack");
+            throw new ResourcePackException("manifest.json not found in the addons");
         }
 
         try{
@@ -117,34 +117,34 @@ class Addons implements IResourcePack{
         $this->sha256 = hash("sha256", $this->contents, true);
     }
 
-    /** Returns the Manifest object of the ResourcePack. */
+    /** Returns the Manifest object of the addons. */
     public function getManifest() : Manifest{
         // HACK: Deserialize after serialization for deep copy
         return unserialize(serialize($this->manifest), ['allowed_classes' => true]);
     }
 
-    /** Returns the human-readable name of the resource pack */
+    /** Returns the human-readable name of the addons */
     public function getPackName() : string{
         return $this->manifest->header->name;
     }
 
-    /** Returns the pack's UUID as a human-readable string */
+    /** Returns the addons UUID as a human-readable string */
     public function getPackId() : string{
         return $this->manifest->header->uuid;
     }
 
-    /** Returns the size of the pack on disk in bytes. */
+    /** Returns the size of the addons on disk in bytes. */
     public function getPackSize() : int{
         return strlen($this->contents) + 1;
     }
 
-    /** Returns a version number for the pack in the format major.minor.patch */
+    /** Returns a version number for the addons in the format major.minor.patch */
     public function getPackVersion() : string{
         return implode(".", $this->manifest->header->version);
     }
 
     /**
-     * Returns the raw SHA256 sum of the compressed resource pack zip. This is used by clients to validate pack downloads.
+     * Returns the raw SHA256 sum of the compressed addons zip. This is used by clients to validate addons downloads.
      *
      * @return string byte-array length 32 bytes
      */
@@ -153,7 +153,7 @@ class Addons implements IResourcePack{
     }
 
     /**
-     * Returns a chunk of the resource pack zip as a byte-array for sending to clients.
+     * Returns a chunk of the addons zip as a byte-array for sending to clients.
      *
      * @param int $start Offset to start reading the chunk from
      * @param int $length Maximum length of data to return.
