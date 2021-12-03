@@ -40,6 +40,7 @@ use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\plugin\PluginBase;
 use pocketmine\resourcepacks\ResourcePack;
 
+use function array_merge;
 use function ceil;
 use function count;
 use function strpos;
@@ -66,15 +67,19 @@ final class Main extends PluginBase implements Listener{
     public function onDataPacketSendEvent(DataPacketSendEvent $event) : void{
         foreach($event->getPackets() as $packet){
             if($packet instanceof ResourcePackStackPacket){
-                $packet->behaviorPackStack = [
-                    ...$packet->behaviorPackStack,
-                    ...$this->addonsManager->getBehaviorPackStackEntries()
-                ];
+                foreach($this->addonsManager->getResourceMap()->getStackEntries() as $entry){
+                    $packet->resourcePackStack[] = $entry;
+                }
+                foreach($this->addonsManager->getBehaviorMap()->getStackEntries() as $entry){
+                    $packet->behaviorPackStack[] = $entry;
+                }
             }elseif($packet instanceof ResourcePacksInfoPacket){
-                $packet->behaviorPackEntries = [
-                    ...$packet->behaviorPackEntries,
-                    ...$this->addonsManager->getBehaviorPackInfoEntries()
-                ];
+                foreach($this->addonsManager->getResourceMap()->getInfoEntries() as $entry){
+                    $packet->resourcePackEntries[] = $entry;
+                }
+                foreach($this->addonsManager->getBehaviorMap()->getInfoEntries() as $entry){
+                    $packet->behaviorPackEntries[] = $entry;
+                }
             }elseif($packet instanceof StartGamePacket){
                 $experiments = $packet->levelSettings->experiments;
                 /**
