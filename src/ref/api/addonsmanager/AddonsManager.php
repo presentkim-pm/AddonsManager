@@ -33,10 +33,16 @@ use pocketmine\resourcepacks\ResourcePack;
 use pocketmine\Server;
 use pocketmine\utils\SingletonTrait;
 use ref\api\addonsmanager\addons\Addons;
+use ref\api\addonsmanager\addons\FolderAddons;
+use ref\api\addonsmanager\addons\ZippedAddons;
 
+use function array_diff;
+use function count;
 use function file_exists;
-use function file_put_contents;
-use function strtolower;
+use function is_dir;
+use function mkdir;
+use function preg_match;
+use function scandir;
 
 final class AddonsManager{
     use SingletonTrait;
@@ -54,8 +60,29 @@ final class AddonsManager{
     private array $behaviorInfoEntries = [];
 
     public function __construct(){
+        $server = Server::getInstance();
+        $logger = $server->getLogger();
+
         $this->resourceMap = new AddonsMap();
         $this->behaviorMap = new AddonsMap();
+
+        $logger->info("Loading addons...");
+        $addonsPath = $server->getDataPath() . "addons/";
+        if(!file_exists($addonsPath)){
+            mkdir($addonsPath, 0777, true);
+        }
+
+        foreach(array_diff(scandir($addonsPath), [".", ".."]) as $innerPath){
+            $realPath = $addonsPath . $innerPath;
+            if(is_dir($realPath)){
+                if(file_exists("$realPath/" . Addons::MANIFEST_FILE)){
+                    $this->register(new FolderAddons($realPath));
+                }
+            }elseif(preg_match("/^(.+)\.(zip|mcpack)$/i", $realPath)){
+                $this->register(new ZippedAddons($realPath));
+            }
+        }
+        $logger->debug("Successfully loaded " . (count($this->resourceMap->getValues()) + count($this->behaviorMap->getValues())) . " addons");
     }
 
     public function getResourceMap() : AddonsMap{
