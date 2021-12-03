@@ -30,6 +30,7 @@ use Ahc\Json\Comment as CommentedJsonDecoder;
 use InvalidArgumentException;
 use JsonMapper;
 use JsonMapper_Exception as JsonMapperException;
+use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\resourcepacks\json\Manifest;
 use pocketmine\resourcepacks\ResourcePack as IResourcePack;
 use pocketmine\resourcepacks\ResourcePackException;
@@ -54,18 +55,15 @@ use function substr;
 use function unserialize;
 
 class Addons implements IResourcePack{
-    public const TYPE_UNKNOWN = 0;
-    public const TYPE_RESOURCE = 1;
-    public const TYPE_BEHAVIOR = 2;
     private const TYPE_MAP = [
-        "resources" => self::TYPE_RESOURCE,
-        "data" => self::TYPE_BEHAVIOR
+        "resources" => ResourcePackType::RESOURCES,
+        "data" => ResourcePackType::BEHAVIORS
     ];
 
     public const MANIFEST_FILE = "manifest.json";
 
     protected Manifest $manifest;
-    protected int $type = self::TYPE_UNKNOWN;
+    protected int $type = ResourcePackType::INVALID;
 
     protected string $contents;
     protected string $sha256;
@@ -121,11 +119,11 @@ class Addons implements IResourcePack{
             throw new ResourcePackException("Addons must have at least one module. (addons uuid: {$this->manifest->header->uuid})");
         }
         foreach($this->manifest->modules as $key => $module){
-            $type = self::TYPE_MAP[$module->type] ?? self::TYPE_UNKNOWN;
-            if($type === self::TYPE_UNKNOWN){
+            $type = self::TYPE_MAP[$module->type] ?? ResourcePackType::INVALID;
+            if($type === ResourcePackType::INVALID){
                 throw new ResourcePackException("Module type must be 'resource' and 'data', '$module->type' given. (module uuid: $module->uuid)");
             }
-            if($this->type !== self::TYPE_UNKNOWN && $this->type !== $type){
+            if($this->type !== ResourcePackType::INVALID && $this->type !== $type){
                 throw new ResourcePackException("Multiple types of modules cannot exist in one add-on. (module uuid: $module->uuid)");
             }
             $this->type = $type;
@@ -151,7 +149,11 @@ class Addons implements IResourcePack{
         unlink($tmp);
     }
 
-    /** Returns the type of the addons. */
+    /**
+     * Returns the type of the addons.
+     *
+     * @see ResourcePackType
+     */
     public function getType() : int{
         return $this->type;
     }
