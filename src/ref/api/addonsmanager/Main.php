@@ -38,13 +38,14 @@ use pocketmine\network\mcpe\protocol\ResourcePackStackPacket;
 use pocketmine\network\mcpe\protocol\StartGamePacket;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\plugin\PluginBase;
-use pocketmine\resourcepacks\ResourcePack;
+use ref\api\addonsmanager\addons\Addons;
 
 use function array_merge;
 use function ceil;
 use function count;
 use function file_exists;
 use function rmdir;
+use function scandir;
 use function strpos;
 use function substr;
 
@@ -60,8 +61,11 @@ final class Main extends PluginBase implements Listener{
 
     private AddonsManager $addonsManager;
 
-    protected function onEnable() : void{
+    protected function onLoad() : void{
         $this->addonsManager = AddonsManager::getInstance();
+    }
+
+    protected function onEnable() : void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
 
         //Remove unnecessary plugin data folder
@@ -75,17 +79,17 @@ final class Main extends PluginBase implements Listener{
     public function onDataPacketSendEvent(DataPacketSendEvent $event) : void{
         foreach($event->getPackets() as $packet){
             if($packet instanceof ResourcePackStackPacket){
-                foreach($this->addonsManager->getResourceMap()->getStackEntries() as $entry){
+                foreach($this->addonsManager->getResourcePackStackEntries() as $entry){
                     $packet->resourcePackStack[] = $entry;
                 }
-                foreach($this->addonsManager->getBehaviorMap()->getStackEntries() as $entry){
+                foreach($this->addonsManager->getBehaviorPackStackEntries() as $entry){
                     $packet->behaviorPackStack[] = $entry;
                 }
             }elseif($packet instanceof ResourcePacksInfoPacket){
-                foreach($this->addonsManager->getResourceMap()->getInfoEntries() as $entry){
+                foreach($this->addonsManager->getResourcePackInfoEntries() as $entry){
                     $packet->resourcePackEntries[] = $entry;
                 }
-                foreach($this->addonsManager->getBehaviorMap()->getInfoEntries() as $entry){
+                foreach($this->addonsManager->getBehaviorPackInfoEntries() as $entry){
                     $packet->behaviorPackEntries[] = $entry;
                 }
             }elseif($packet instanceof StartGamePacket){
@@ -117,16 +121,16 @@ final class Main extends PluginBase implements Listener{
                 if($splitPos !== false){
                     $uuid = substr($uuid, 0, $splitPos);
                 }
-                $pack = $this->addonsManager->getBehaviorPack($uuid);
-                if($pack instanceof ResourcePack){
+                $addons = $this->addonsManager->get($uuid);
+                if($addons !== null){
                     $pk = ResourcePackDataInfoPacket::create(
-                        $pack->getPackId(),
+                        $addons->getPackId(),
                         self::PACK_CHUNK_SIZE,
-                        (int) ceil($pack->getPackSize() / self::PACK_CHUNK_SIZE),
-                        $pack->getPackSize(),
-                        $pack->getSha256(),
+                        (int) ceil($addons->getPackSize() / self::PACK_CHUNK_SIZE),
+                        $addons->getPackSize(),
+                        $addons->getSha256(),
                         false,
-                        ResourcePackType::RESOURCES
+                        $addons->getType()
                     );
                     $pk->packType = ResourcePackType::BEHAVIORS;
                     $session->sendDataPacket($pk);
@@ -135,17 +139,17 @@ final class Main extends PluginBase implements Listener{
                 }
             }
 
-            $session->getLogger()->debug("Player requested download of " . (count($packet->packIds) - count($remained)) . " behavior packs");
+            $session->getLogger()->debug("Player requested download of " . (count($packet->packIds) - count($remained)) . " addons");
             $packet->packIds = $remained;
         }elseif(
             $packet instanceof ResourcePackChunkRequestPacket &&
-            ($pack = $this->addonsManager->getBehaviorPack($packet->packId)) instanceof ResourcePack
+            ($addons = $this->addonsManager->get($packet->packId)) instanceof Addons
         ){
             $event->getOrigin()->sendDataPacket(ResourcePackChunkDataPacket::create(
-                $pack->getPackId(),
+                $addons->getPackId(),
                 $packet->chunkIndex,
                 (self::PACK_CHUNK_SIZE * $packet->chunkIndex),
-                $pack->getPackChunk(self::PACK_CHUNK_SIZE * $packet->chunkIndex, self::PACK_CHUNK_SIZE)
+                $addons->getPackChunk(self::PACK_CHUNK_SIZE * $packet->chunkIndex, self::PACK_CHUNK_SIZE)
             ));
             $event->cancel();
         }
