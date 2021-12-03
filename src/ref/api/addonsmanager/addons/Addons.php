@@ -104,7 +104,7 @@ class Addons implements IResourcePack{
         $archive = new ZipArchive();
         $archive->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         foreach($files as $innerPath => $contents){
-            if(str_ends_with($contents, ".json")){
+            if(str_ends_with($innerPath, ".json")){
                 $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
             $archive->addFromString($innerPath, $contents);
