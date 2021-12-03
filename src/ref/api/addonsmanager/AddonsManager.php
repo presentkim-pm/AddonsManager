@@ -29,6 +29,7 @@ namespace ref\api\addonsmanager;
 use InvalidArgumentException;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\BehaviorPackInfoEntry;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackStackEntry;
+use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\resourcepacks\ResourcePack;
 use pocketmine\Server;
 use pocketmine\utils\SingletonTrait;
@@ -95,9 +96,9 @@ final class AddonsManager{
 
     /** @return $this */
     public function register(Addons $addons) : self{
-        if($addons->getType() === Addons::TYPE_RESOURCE){
+        if($addons->getType() === ResourcePackType::RESOURCES){
             $this->resourceMap->add($addons);
-        }elseif($addons->getType() === Addons::TYPE_BEHAVIOR){
+        }elseif($addons->getType() === ResourcePackType::BEHAVIORS){
             $this->behaviorMap->add($addons);
         }else{
             throw new InvalidArgumentException("Invalid Addons type");
