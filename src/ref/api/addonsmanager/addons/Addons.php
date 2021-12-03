@@ -135,6 +135,7 @@ class Addons implements IResourcePack{
 
         $this->contents = file_get_contents($tmp);
         $this->sha256 = hash("sha256", $this->contents, true);
+        unlink($tmp);
     }
 
     /** Returns the type of the addons. */
