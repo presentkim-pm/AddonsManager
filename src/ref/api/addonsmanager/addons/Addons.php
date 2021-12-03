@@ -108,6 +108,8 @@ class Addons implements IResourcePack{
                 $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
             $archive->addFromString($innerPath, $contents);
+            $archive->setCompressionName($innerPath, ZipArchive::CM_DEFLATE64);
+            $archive->setMtimeName($innerPath, 0);
 
             $fullContents .= $contents;
         }
@@ -140,6 +142,8 @@ class Addons implements IResourcePack{
             "capabilities" => $this->manifest->capabilities,
             "dependencies" => $this->manifest->dependencies
         ], static fn(mixed $v) : bool => !empty($v)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $archive->setCompressionName(self::MANIFEST_FILE, ZipArchive::CM_DEFLATE64);
+        $archive->setMtimeName(self::MANIFEST_FILE, 0);
         $archive->close();
 
         $this->contents = file_get_contents($tmp);
