@@ -53,9 +53,18 @@ use function substr;
 use function unserialize;
 
 class Addons implements IResourcePack{
+    public const TYPE_UNKNOWN = 0;
+    public const TYPE_RESOURCE = 1;
+    public const TYPE_BEHAVIOR = 2;
+    private const TYPE_MAP = [
+        "resources" => self::TYPE_RESOURCE,
+        "data" => self::TYPE_BEHAVIOR
+    ];
+
     public const MANIFEST_FILE = "manifest.json";
 
     protected Manifest $manifest;
+    protected int $type = self::TYPE_UNKNOWN;
 
     protected string $contents;
     protected string $sha256;
@@ -104,10 +113,21 @@ class Addons implements IResourcePack{
 
         if($this->getPackId() === "00000000-0000-0000-0000-000000000000"){
             $this->manifest->header->uuid = Uuid::fromString(md5($fullContents))->toString();
-            foreach($this->manifest->modules as $key => $module){
-                if($module->uuid === "00000000-0000-0000-0000-000000000000"){
-                    $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
-                }
+        }
+        if(empty($this->manifest->modules)){
+            throw new ResourcePackException("Addons must have at least one module. (addons uuid: {$this->manifest->header->uuid})");
+        }
+        foreach($this->manifest->modules as $key => $module){
+            $type = self::TYPE_MAP[$module->type] ?? self::TYPE_UNKNOWN;
+            if($type === self::TYPE_UNKNOWN){
+                throw new ResourcePackException("Module type must be 'resource' and 'data', '$module->type' given. (module uuid: $module->uuid)");
+            }
+            if($this->type !== self::TYPE_UNKNOWN && $this->type !== $type){
+                throw new ResourcePackException("Multiple types of modules cannot exist in one add-on. (module uuid: $module->uuid)");
+            }
+            $this->type = $type;
+            if($module->uuid === "00000000-0000-0000-0000-000000000000"){
+                $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
             }
         }
         $archive->addFromString(self::MANIFEST_FILE, json_encode($this->manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -115,6 +135,11 @@ class Addons implements IResourcePack{
 
         $this->contents = file_get_contents($tmp);
         $this->sha256 = hash("sha256", $this->contents, true);
+    }
+
+    /** Returns the type of the addons. */
+    public function getType() : int{
+        return $this->type;
     }
 
     /** Returns the Manifest object of the addons. */
