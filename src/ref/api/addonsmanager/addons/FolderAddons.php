@@ -33,23 +33,29 @@ use SplFileInfo;
 use Webmozart\PathUtil\Path;
 
 use function file_exists;
+use function file_get_contents;
 use function is_dir;
 
 class FolderAddons extends Addons{
     /** @throws ResourcePackException */
     public function __construct(string $dir){
-        $dir = Path::canonicalize($dir) . "/";
-        if(!file_exists($dir) || !is_dir($dir)){
-            throw new ResourcePackException("$dir is invalid path or not directory");
+        $baseDir = Path::canonicalize($dir) . "/";
+        if(!file_exists($baseDir) || !is_dir($baseDir)){
+            throw new ResourcePackException("$baseDir is invalid path or not directory");
         }
 
         $files = [];
         /** @var SplFileInfo $fileInfo */
-        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir)) as $fileInfo){
+        foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($baseDir)) as $fileInfo){
             if($fileInfo->isFile()){
                 $realPath = $fileInfo->getPathname();
-                $innerPath = Path::makeRelative($realPath, $dir);
-                $files[$innerPath] = $realPath;
+                $innerPath = Path::makeRelative($realPath, $baseDir);
+
+                $contents = file_get_contents($realPath);
+                if($contents === false){
+                    throw new ResourcePackException("Failed to open $realPath file");
+                }
+                $files[$innerPath] = $contents;
             }
         }
         parent::__construct($files);
