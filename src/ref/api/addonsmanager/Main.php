@@ -43,6 +43,8 @@ use pocketmine\resourcepacks\ResourcePack;
 use function array_merge;
 use function ceil;
 use function count;
+use function file_exists;
+use function rmdir;
 use function strpos;
 use function substr;
 
@@ -61,6 +63,12 @@ final class Main extends PluginBase implements Listener{
     protected function onEnable() : void{
         $this->addonsManager = AddonsManager::getInstance();
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+
+        //Remove unnecessary plugin data folder
+        $dataFolder = $this->getDataFolder();
+        if(file_exists($dataFolder) && count(scandir($dataFolder)) === 2){
+            rmdir($dataFolder);
+        }
     }
 
     /** @priority LOWEST */
