@@ -28,9 +28,9 @@ namespace ref\api\addonsmanager;
 
 use InvalidArgumentException;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\BehaviorPackInfoEntry;
+use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackInfoEntry;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackStackEntry;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
-use pocketmine\resourcepacks\ResourcePack;
 use pocketmine\Server;
 use pocketmine\utils\SingletonTrait;
 use ref\api\addonsmanager\addons\Addons;
@@ -38,34 +38,36 @@ use ref\api\addonsmanager\addons\FolderAddons;
 use ref\api\addonsmanager\addons\ZippedAddons;
 
 use function array_diff;
+use function array_values;
 use function count;
 use function file_exists;
 use function is_dir;
 use function mkdir;
 use function preg_match;
 use function scandir;
+use function strtolower;
 
 final class AddonsManager{
     use SingletonTrait;
 
-    private AddonsMap $resourceMap;
-    private AddonsMap $behaviorMap;
-
-    /** @var array<string, ResourcePack> */
+    /** @var array<string, Addons> */
+    private array $resourcePacks = [];
+    /** @var array<string, Addons> */
     private array $behaviorPacks = [];
 
     /** @var ResourcePackStackEntry[] */
-    private array $behaviorStackEntries = [];
+    private array $resourcePackStackEntries = [];
+    /** @var ResourcePackStackEntry[] */
+    private array $behaviorPackStackEntries = [];
 
+    /** @var ResourcePackInfoEntry[] */
+    private array $resourcePackInfoEntries = [];
     /** @var BehaviorPackInfoEntry[] */
-    private array $behaviorInfoEntries = [];
+    private array $behaviorPackInfoEntries = [];
 
     public function __construct(){
         $server = Server::getInstance();
         $logger = $server->getLogger();
-
-        $this->resourceMap = new AddonsMap();
-        $this->behaviorMap = new AddonsMap();
 
         $logger->info("Loading addons...");
         $addonsPath = $server->getDataPath() . "addons/";
@@ -83,38 +85,76 @@ final class AddonsManager{
                 $this->register(new ZippedAddons($realPath));
             }
         }
-        $logger->debug("Successfully loaded " . (count($this->resourceMap->getValues()) + count($this->behaviorMap->getValues())) . " addons");
-    }
-
-    public function getResourceMap() : AddonsMap{
-        return $this->resourceMap;
-    }
-
-    public function getBehaviorMap() : AddonsMap{
-        return $this->behaviorMap;
+        $logger->debug("Successfully loaded " . (count($this->resourcePacks) + count($this->behaviorPacks)) . " addons");
     }
 
     /** @return $this */
     public function register(Addons $addons) : self{
+        $id = strtolower($addons->getPackId());
+        $version = $addons->getPackVersion();
         if($addons->getType() === ResourcePackType::RESOURCES){
-            $this->resourceMap->add($addons);
+            $this->resourcePacks[$id] = $addons;
+            $this->resourcePackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
+            $this->resourcePackInfoEntries[$id] = new ResourcePackInfoEntry($id, $version, $addons->getPackSize());
         }elseif($addons->getType() === ResourcePackType::BEHAVIORS){
-            $this->behaviorMap->add($addons);
+            $this->behaviorPacks[$id] = $addons;
+            $this->behaviorPackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
+            $this->behaviorPackInfoEntries[$id] = new BehaviorPackInfoEntry($id, $version, $addons->getPackSize());
         }else{
             throw new InvalidArgumentException("Invalid Addons type");
         }
         return $this;
     }
 
-    /** Returns the resource pack or behavior pack matching the specified UUID string, or null if the ID was not recognized. */
+    /** Remove the resource pack or behavior pack matching the specified UUID string, or null if the ID was not recognized. */
     public function unregister(string $id) : self{
-        $this->resourceMap->remove($id);
-        $this->behaviorMap->remove($id);
+        $id = strtolower($id);
+        unset(
+            $this->resourcePacks[$id],
+            $this->resourcePackStackEntries[$id],
+            $this->resourcePackInfoEntries[$id],
+            $this->behaviorPacks[$id],
+            $this->behaviorPackStackEntries[$id],
+            $this->behaviorPackInfoEntries[$id]
+        );
         return $this;
     }
 
     /** Returns the resource pack or behavior pack matching the specified UUID string, or null if the ID was not recognized. */
     public function get(string $id) : ?Addons{
-        return $this->resourceMap->get($id) ?? $this->behaviorMap->get($id);
+        $id = strtolower($id);
+        return $this->resourcePacks[$id] ?? $this->behaviorPacks[$id] ?? null;
+    }
+
+    /**
+     * @return ResourcePackStackEntry[]
+     * @internal
+     */
+    public function getResourcePackStackEntries() : array{
+        return array_values($this->resourcePackStackEntries);
+    }
+
+    /**
+     * @return ResourcePackStackEntry[]
+     * @internal
+     */
+    public function getBehaviorPackStackEntries() : array{
+        return array_values($this->behaviorPackStackEntries);
+    }
+
+    /**
+     * @return ResourcePackInfoEntry[]
+     * @internal
+     */
+    public function getResourcePackInfoEntries() : array{
+        return array_values($this->resourcePackStackEntries);
+    }
+
+    /**
+     * @return BehaviorPackInfoEntry[]
+     * @internal
+     */
+    public function getBehaviorPackInfoEntries() : array{
+        return array_values($this->behaviorPackInfoEntries);
     }
 }
