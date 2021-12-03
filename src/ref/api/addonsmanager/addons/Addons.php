@@ -40,6 +40,7 @@ use stdClass;
 use Webmozart\PathUtil\Path;
 use ZipArchive;
 
+use function array_filter;
 use function file_get_contents;
 use function gettype;
 use function hash;
@@ -130,7 +131,15 @@ class Addons implements IResourcePack{
                 $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
             }
         }
-        $archive->addFromString(self::MANIFEST_FILE, json_encode($this->manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        $archive->addFromString(self::MANIFEST_FILE, json_encode(array_filter([
+            "format_version" => $this->manifest->format_version,
+            "header" => $this->manifest->header,
+            "modules" => $this->manifest->modules,
+            "metadata" => $this->manifest->metadata,
+            "capabilities" => $this->manifest->capabilities,
+            "dependencies" => $this->manifest->dependencies
+        ], static fn(mixed $v) : bool => !empty($v)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         $archive->close();
 
         $this->contents = file_get_contents($tmp);
