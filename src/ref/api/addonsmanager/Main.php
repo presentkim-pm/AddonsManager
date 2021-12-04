@@ -50,7 +50,7 @@ use function strpos;
 use function substr;
 
 final class Main extends PluginBase implements Listener{
-    private const PACK_CHUNK_SIZE = 128 * 1024; //128KB
+    private const MAX_CHUNK_SIZE = 128 * 1024; //128KB
     private const OVERRIDDEN_EXPERIMENTS = [
         "scripting" => true, // Additional Modding Capabilities
         "upcoming_creator_features" => true, // Upcoming Creator Features
@@ -124,10 +124,10 @@ final class Main extends PluginBase implements Listener{
                 $addons = $this->addonsManager->get($uuid);
                 if($addons !== null){
                     $pk = ResourcePackDataInfoPacket::create(
-                        $addons->getPackId(),
-                        self::PACK_CHUNK_SIZE,
-                        (int) ceil($addons->getPackSize() / self::PACK_CHUNK_SIZE),
-                        $addons->getPackSize(),
+                        $addons->getUuid(),
+                        self::MAX_CHUNK_SIZE,
+                        (int) ceil($addons->getSize() / self::MAX_CHUNK_SIZE),
+                        $addons->getSize(),
                         $addons->getSha256(),
                         false,
                         $addons->getType()
@@ -146,10 +146,10 @@ final class Main extends PluginBase implements Listener{
             ($addons = $this->addonsManager->get($packet->packId)) instanceof Addons
         ){
             $event->getOrigin()->sendDataPacket(ResourcePackChunkDataPacket::create(
-                $addons->getPackId(),
+                $addons->getUuid(),
                 $packet->chunkIndex,
-                (self::PACK_CHUNK_SIZE * $packet->chunkIndex),
-                $addons->getPackChunk(self::PACK_CHUNK_SIZE * $packet->chunkIndex, self::PACK_CHUNK_SIZE)
+                (self::MAX_CHUNK_SIZE * $packet->chunkIndex),
+                $addons->getChunk(self::MAX_CHUNK_SIZE * $packet->chunkIndex, self::MAX_CHUNK_SIZE)
             ));
             $event->cancel();
         }
