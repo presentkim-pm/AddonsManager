@@ -90,16 +90,16 @@ final class AddonsManager{
 
     /** @return $this */
     public function register(Addons $addons) : self{
-        $id = strtolower($addons->getPackId());
-        $version = $addons->getPackVersion();
+        $id = strtolower($addons->getUuid());
+        $version = $addons->getVersion();
         if($addons->getType() === ResourcePackType::RESOURCES){
             $this->resourcePacks[$id] = $addons;
             $this->resourcePackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
-            $this->resourcePackInfoEntries[$id] = new ResourcePackInfoEntry($id, $version, $addons->getPackSize());
+            $this->resourcePackInfoEntries[$id] = new ResourcePackInfoEntry($id, $version, $addons->getSize());
         }elseif($addons->getType() === ResourcePackType::BEHAVIORS){
             $this->behaviorPacks[$id] = $addons;
             $this->behaviorPackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
-            $this->behaviorPackInfoEntries[$id] = new BehaviorPackInfoEntry($id, $version, $addons->getPackSize());
+            $this->behaviorPackInfoEntries[$id] = new BehaviorPackInfoEntry($id, $version, $addons->getSize());
         }else{
             throw new InvalidArgumentException("Invalid Addons type");
         }

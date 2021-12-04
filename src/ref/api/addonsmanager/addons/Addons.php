@@ -32,7 +32,6 @@ use JsonMapper;
 use JsonMapper_Exception as JsonMapperException;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\resourcepacks\json\Manifest;
-use pocketmine\resourcepacks\ResourcePack as IResourcePack;
 use pocketmine\resourcepacks\ResourcePackException;
 use Ramsey\Uuid\Uuid;
 use RuntimeException;
@@ -55,7 +54,7 @@ use function sys_get_temp_dir;
 use function tempnam;
 use function unserialize;
 
-class Addons implements IResourcePack{
+class Addons{
     private const MEANINGLESS_UUID_REGEX = "/^[0\-]*$/";
     private const TYPE_MAP = [
         "resources" => ResourcePackType::RESOURCES,
@@ -175,22 +174,22 @@ class Addons implements IResourcePack{
     }
 
     /** Returns the human-readable name of the addons */
-    public function getPackName() : string{
+    public function getName() : string{
         return $this->manifest->header->name;
     }
 
     /** Returns the addons UUID as a human-readable string */
-    public function getPackId() : string{
+    public function getUuid() : string{
         return $this->manifest->header->uuid;
     }
 
     /** Returns the size of the addons on disk in bytes. */
-    public function getPackSize() : int{
+    public function getSize() : int{
         return strlen($this->contents) + 1;
     }
 
     /** Returns a version number for the addons in the format major.minor.patch */
-    public function getPackVersion() : string{
+    public function getVersion() : string{
         return implode(".", $this->manifest->header->version);
     }
 
@@ -212,7 +211,7 @@ class Addons implements IResourcePack{
      * @return string byte-array
      * @throws InvalidArgumentException if the chunk does not exist
      */
-    public function getPackChunk(int $start, int $length) : string{
+    public function getChunk(int $start, int $length) : string{
         return substr($this->contents, $start, $length);
     }
 }
