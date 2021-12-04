@@ -46,6 +46,7 @@ use function hash;
 use function implode;
 use function json_encode;
 use function md5;
+use function preg_match;
 use function serialize;
 use function str_ends_with;
 use function strlen;
@@ -55,6 +56,7 @@ use function tempnam;
 use function unserialize;
 
 class Addons implements IResourcePack{
+    private const MEANINGLESS_UUID_REGEX = "/^[0\-]*$/";
     private const TYPE_MAP = [
         "resources" => ResourcePackType::RESOURCES,
         "data" => ResourcePackType::BEHAVIORS
@@ -85,7 +87,7 @@ class Addons implements IResourcePack{
             throw new ResourcePackException("Invalid manifest.json contents: " . $e->getMessage(), 0, $e);
         }
 
-        $tempPath = tempnam(sys_get_temp_dir(),'pm$');
+        $tempPath = tempnam(sys_get_temp_dir(), 'pm$');
         $fullContents = "";
 
         $archive = new ZipArchive();
@@ -101,7 +103,7 @@ class Addons implements IResourcePack{
             $fullContents .= $contents;
         }
 
-        if($this->getPackId() === "00000000-0000-0000-0000-000000000000"){
+        if(preg_match(self::MEANINGLESS_UUID_REGEX, $this->manifest->header->uuid) === 1){
             $this->manifest->header->uuid = Uuid::fromString(md5($fullContents))->toString();
         }
         if(empty($this->manifest->modules)){
@@ -116,7 +118,7 @@ class Addons implements IResourcePack{
                 throw new ResourcePackException("Multiple types of modules cannot exist in one add-on. (module uuid: $module->uuid)");
             }
             $this->type = $type;
-            if($module->uuid === "00000000-0000-0000-0000-000000000000"){
+            if(preg_match(self::MEANINGLESS_UUID_REGEX, $module->uuid) === 1){
                 $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
             }
         }
