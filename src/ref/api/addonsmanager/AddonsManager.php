@@ -55,15 +55,15 @@ final class AddonsManager{
     /** @var array<string, Addons> */
     private array $behaviorPacks = [];
 
-    /** @var ResourcePackStackEntry[] */
-    private array $resourcePackStackEntries = [];
-    /** @var ResourcePackStackEntry[] */
-    private array $behaviorPackStackEntries = [];
-
     /** @var ResourcePackInfoEntry[] */
     private array $resourcePackInfoEntries = [];
     /** @var BehaviorPackInfoEntry[] */
     private array $behaviorPackInfoEntries = [];
+
+    /** @var ResourcePackStackEntry[] */
+    private array $resourcePackStackEntries = [];
+    /** @var ResourcePackStackEntry[] */
+    private array $behaviorPackStackEntries = [];
 
     public function __construct(){
         $server = Server::getInstance();
@@ -94,12 +94,12 @@ final class AddonsManager{
         $version = $addons->getVersion();
         if($addons->getType() === ResourcePackType::RESOURCES){
             $this->resourcePacks[$id] = $addons;
-            $this->resourcePackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
             $this->resourcePackInfoEntries[$id] = new ResourcePackInfoEntry($id, $version, $addons->getSize());
+            $this->resourcePackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
         }elseif($addons->getType() === ResourcePackType::BEHAVIORS){
             $this->behaviorPacks[$id] = $addons;
-            $this->behaviorPackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
             $this->behaviorPackInfoEntries[$id] = new BehaviorPackInfoEntry($id, $version, $addons->getSize());
+            $this->behaviorPackStackEntries[$id] = new ResourcePackStackEntry($id, $version, "");
         }else{
             throw new InvalidArgumentException("Invalid Addons type");
         }
@@ -111,11 +111,11 @@ final class AddonsManager{
         $id = strtolower($id);
         unset(
             $this->resourcePacks[$id],
-            $this->resourcePackStackEntries[$id],
             $this->resourcePackInfoEntries[$id],
+            $this->resourcePackStackEntries[$id],
             $this->behaviorPacks[$id],
-            $this->behaviorPackStackEntries[$id],
-            $this->behaviorPackInfoEntries[$id]
+            $this->behaviorPackInfoEntries[$id],
+            $this->behaviorPackStackEntries[$id]
         );
         return $this;
     }
@@ -124,22 +124,6 @@ final class AddonsManager{
     public function get(string $id) : ?Addons{
         $id = strtolower($id);
         return $this->resourcePacks[$id] ?? $this->behaviorPacks[$id] ?? null;
-    }
-
-    /**
-     * @return ResourcePackStackEntry[]
-     * @internal
-     */
-    public function getResourcePackStackEntries() : array{
-        return array_values($this->resourcePackStackEntries);
-    }
-
-    /**
-     * @return ResourcePackStackEntry[]
-     * @internal
-     */
-    public function getBehaviorPackStackEntries() : array{
-        return array_values($this->behaviorPackStackEntries);
     }
 
     /**
@@ -156,5 +140,21 @@ final class AddonsManager{
      */
     public function getBehaviorPackInfoEntries() : array{
         return array_values($this->behaviorPackInfoEntries);
+    }
+
+    /**
+     * @return ResourcePackStackEntry[]
+     * @internal
+     */
+    public function getResourcePackStackEntries() : array{
+        return array_values($this->resourcePackStackEntries);
+    }
+
+    /**
+     * @return ResourcePackStackEntry[]
+     * @internal
+     */
+    public function getBehaviorPackStackEntries() : array{
+        return array_values($this->behaviorPackStackEntries);
     }
 }

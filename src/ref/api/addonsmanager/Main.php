@@ -36,7 +36,6 @@ use pocketmine\network\mcpe\protocol\ResourcePackDataInfoPacket;
 use pocketmine\network\mcpe\protocol\ResourcePacksInfoPacket;
 use pocketmine\network\mcpe\protocol\ResourcePackStackPacket;
 use pocketmine\network\mcpe\protocol\StartGamePacket;
-use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\plugin\PluginBase;
 use ref\api\addonsmanager\addons\Addons;
 
@@ -78,19 +77,19 @@ final class Main extends PluginBase implements Listener{
     /** @priority LOWEST */
     public function onDataPacketSendEvent(DataPacketSendEvent $event) : void{
         foreach($event->getPackets() as $packet){
-            if($packet instanceof ResourcePackStackPacket){
-                foreach($this->addonsManager->getResourcePackStackEntries() as $entry){
-                    $packet->resourcePackStack[] = $entry;
-                }
-                foreach($this->addonsManager->getBehaviorPackStackEntries() as $entry){
-                    $packet->behaviorPackStack[] = $entry;
-                }
-            }elseif($packet instanceof ResourcePacksInfoPacket){
+            if($packet instanceof ResourcePacksInfoPacket){
                 foreach($this->addonsManager->getResourcePackInfoEntries() as $entry){
                     $packet->resourcePackEntries[] = $entry;
                 }
                 foreach($this->addonsManager->getBehaviorPackInfoEntries() as $entry){
                     $packet->behaviorPackEntries[] = $entry;
+                }
+            }elseif($packet instanceof ResourcePackStackPacket){
+                foreach($this->addonsManager->getResourcePackStackEntries() as $entry){
+                    $packet->resourcePackStack[] = $entry;
+                }
+                foreach($this->addonsManager->getBehaviorPackStackEntries() as $entry){
+                    $packet->behaviorPackStack[] = $entry;
                 }
             }elseif($packet instanceof StartGamePacket){
                 $experiments = $packet->levelSettings->experiments;
