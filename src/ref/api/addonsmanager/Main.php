@@ -122,7 +122,7 @@ final class Main extends PluginBase implements Listener{
                 }
                 $addons = $this->addonsManager->get($uuid);
                 if($addons !== null){
-                    $pk = ResourcePackDataInfoPacket::create(
+                    $session->sendDataPacket(ResourcePackDataInfoPacket::create(
                         $addons->getUuid(),
                         self::MAX_CHUNK_SIZE,
                         (int) ceil($addons->getSize() / self::MAX_CHUNK_SIZE),
@@ -130,9 +130,7 @@ final class Main extends PluginBase implements Listener{
                         $addons->getSha256(),
                         false,
                         $addons->getType()
-                    );
-                    $pk->packType = ResourcePackType::BEHAVIORS;
-                    $session->sendDataPacket($pk);
+                    ));
                 }else{
                     $remained[$key] = $uuid;
                 }
