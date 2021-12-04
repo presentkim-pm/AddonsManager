@@ -34,11 +34,9 @@ use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
 use pocketmine\resourcepacks\json\Manifest;
 use pocketmine\resourcepacks\ResourcePack as IResourcePack;
 use pocketmine\resourcepacks\ResourcePackException;
-use pocketmine\Server;
 use Ramsey\Uuid\Uuid;
 use RuntimeException;
 use stdClass;
-use Webmozart\PathUtil\Path;
 use ZipArchive;
 
 use function array_filter;
@@ -52,6 +50,8 @@ use function serialize;
 use function str_ends_with;
 use function strlen;
 use function substr;
+use function sys_get_temp_dir;
+use function tempnam;
 use function unserialize;
 
 class Addons implements IResourcePack{
@@ -85,11 +85,11 @@ class Addons implements IResourcePack{
             throw new ResourcePackException("Invalid manifest.json contents: " . $e->getMessage(), 0, $e);
         }
 
-        $tmp = Path::canonicalize(Server::getInstance()->getDataPath()) . "/\$TEMP_" . md5($manifestFile) . ".zip";
+        $tempPath = tempnam(sys_get_temp_dir(),'pm$');
         $fullContents = "";
 
         $archive = new ZipArchive();
-        $archive->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $archive->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         foreach($files as $innerPath => $contents){
             if(str_ends_with($innerPath, ".json")){
                 $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -133,9 +133,9 @@ class Addons implements IResourcePack{
         $archive->setMtimeName(self::MANIFEST_FILE, 0);
         $archive->close();
 
-        $this->contents = file_get_contents($tmp);
+        $this->contents = file_get_contents($tempPath);
         $this->sha256 = hash("sha256", $this->contents, true);
-        unlink($tmp);
+        unlink($tempPath);
     }
 
     /**
