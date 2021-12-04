@@ -147,7 +147,7 @@ final class AddonsManager{
      * @internal
      */
     public function getResourcePackInfoEntries() : array{
-        return array_values($this->resourcePackStackEntries);
+        return array_values($this->resourcePackInfoEntries);
     }
 
     /**
