@@ -80,18 +80,7 @@ class Addons implements IResourcePack{
         }
 
         try{
-            $manifestJson = (new CommentedJsonDecoder())->decode($manifestFile);
-            if(!($manifestJson instanceof stdClass)){
-                throw new RuntimeException("manifest.json should contain a JSON object, not " . gettype($manifestJson));
-            }
-
-            $mapper = new JsonMapper();
-            $mapper->bExceptionOnUndefinedProperty = true;
-            $mapper->bExceptionOnMissingData = true;
-
-            $this->manifest = $mapper->map($manifestJson, new Manifest());
-        }catch(RuntimeException $e){
-            throw new ResourcePackException("Failed to parse manifest.json: " . $e->getMessage(), $e->getCode(), $e);
+            $this->manifest = $this->parseManifestFile($manifestFile);
         }catch(JsonMapperException $e){
             throw new ResourcePackException("Invalid manifest.json contents: " . $e->getMessage(), 0, $e);
         }
@@ -147,6 +136,25 @@ class Addons implements IResourcePack{
         $this->contents = file_get_contents($tmp);
         $this->sha256 = hash("sha256", $this->contents, true);
         unlink($tmp);
+    }
+
+    /**
+     * @param string $manifestFile
+     *
+     * @return Manifest
+     * @throws JsonMapperException
+     */
+    private function parseManifestFile(string $manifestFile) : Manifest{
+        $manifestJson = (new CommentedJsonDecoder())->decode($manifestFile);
+        if(!($manifestJson instanceof stdClass)){
+            throw new RuntimeException("manifest.json should contain a JSON object, not " . gettype($manifestJson));
+        }
+
+        $mapper = new JsonMapper();
+        $mapper->bExceptionOnUndefinedProperty = true;
+        $mapper->bExceptionOnMissingData = true;
+
+        return $mapper->map($manifestJson, new Manifest());
     }
 
     /**
