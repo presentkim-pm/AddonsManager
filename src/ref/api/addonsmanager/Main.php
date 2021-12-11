@@ -56,6 +56,8 @@ final class Main extends PluginBase implements Listener{
         "gametest" => true, // Enable GameTest Framework
         "data_driven_items" => true, // Holiday Creator Features
         "experimental_molang_features" => true, // Experimental Molang Features
+        "vanilla_experiments" => true, // Vanilla Experiments
+        "data_driven_biomes" => true, // Creation of Custom Biomes
     ];
 
     private AddonsManager $addonsManager;
