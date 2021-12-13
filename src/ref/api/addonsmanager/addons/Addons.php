@@ -74,14 +74,14 @@ class Addons{
      *
      * @throws ResourcePackException
      */
-    protected function __construct(array $files){
+    public function __construct(array $files){
         $manifestFile = $files[self::MANIFEST_FILE] ?? null;
         if($manifestFile === null){
             throw new ResourcePackException("manifest.json not found in the addons");
         }
 
         try{
-            $this->manifest = $this->parseManifestFile($manifestFile);
+            $this->manifest = self::parseManifestFile($manifestFile);
         }catch(JsonMapperException $e){
             throw new ResourcePackException("Invalid manifest.json contents: " . $e->getMessage(), 0, $e);
         }
@@ -93,7 +93,10 @@ class Addons{
         $archive->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         foreach($files as $innerPath => $contents){
             if(str_ends_with($innerPath, ".json")){
-                $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                try{
+                    $contents = json_encode((new CommentedJsonDecoder())->decode($contents), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                }catch(RuntimeException){
+                }
             }
             $archive->addFromString($innerPath, $contents);
             $archive->setCompressionName($innerPath, ZipArchive::CM_DEFLATE64);
@@ -124,7 +127,13 @@ class Addons{
 
         $archive->addFromString(self::MANIFEST_FILE, json_encode(array_filter([
             "format_version" => $this->manifest->format_version,
-            "header" => $this->manifest->header,
+            "header" => array_filter([
+                "description" => $this->manifest->header->description ?? null,
+                "name" => $this->manifest->header->name ?? null,
+                "uuid" => $this->manifest->header->uuid ?? null,
+                "version" => $this->manifest->header->version ?? null,
+                "min_engine_version" => $this->manifest->header->min_engine_version ?? null,
+            ], static fn(mixed $v) : bool => !empty($v)),
             "modules" => $this->manifest->modules,
             "metadata" => $this->manifest->metadata,
             "capabilities" => $this->manifest->capabilities,
@@ -137,25 +146,6 @@ class Addons{
         $this->contents = file_get_contents($tempPath);
         $this->sha256 = hash("sha256", $this->contents, true);
         unlink($tempPath);
-    }
-
-    /**
-     * @param string $manifestFile
-     *
-     * @return Manifest
-     * @throws JsonMapperException
-     */
-    private function parseManifestFile(string $manifestFile) : Manifest{
-        $manifestJson = (new CommentedJsonDecoder())->decode($manifestFile);
-        if(!($manifestJson instanceof stdClass)){
-            throw new RuntimeException("manifest.json should contain a JSON object, not " . gettype($manifestJson));
-        }
-
-        $mapper = new JsonMapper();
-        $mapper->bExceptionOnUndefinedProperty = true;
-        $mapper->bExceptionOnMissingData = true;
-
-        return $mapper->map($manifestJson, new Manifest());
     }
 
     /**
@@ -213,5 +203,35 @@ class Addons{
      */
     public function getChunk(int $start, int $length) : string{
         return substr($this->contents, $start, $length);
+    }
+
+    /**
+     * @param string $manifestFile
+     *
+     * @return Manifest
+     * @throws JsonMapperException
+     */
+    public static function parseManifestFile(string $manifestFile) : Manifest{
+        $manifestJson = (new CommentedJsonDecoder())->decode($manifestFile);
+        if(!($manifestJson instanceof stdClass)){
+            throw new RuntimeException("manifest.json should contain a JSON object, not " . gettype($manifestJson));
+        }
+
+        $mapper = new JsonMapper();
+        $mapper->bExceptionOnUndefinedProperty = true;
+        $mapper->bExceptionOnMissingData = true;
+
+        return $mapper->map($manifestJson, new Manifest());
+    }
+
+    public static function manifestSerialize(Manifest $manifest) : string{
+        return json_encode(array_filter([
+            "format_version" => $manifest->format_version,
+            "header" => $manifest->header,
+            "modules" => $manifest->modules,
+            "metadata" => $manifest->metadata,
+            "capabilities" => $manifest->capabilities,
+            "dependencies" => $manifest->dependencies
+        ], static fn(mixed $v) : bool => !empty($v)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 }
