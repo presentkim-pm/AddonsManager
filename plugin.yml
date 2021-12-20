@@ -5,5 +5,4 @@ version: 1.1.0
 api: [ 4.0.0 ]
 authors: [ ref-team, PresentKim ]
 description: A simple add-ons manager (resource pack and behavior pack at once)
-mcpe-protocol: [ 471, 475 ]
 ...
