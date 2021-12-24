@@ -29,11 +29,11 @@ namespace ref\api\addonsmanager\builder;
 
 use GdImage;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
-use pocketmine\resourcepacks\json\Manifest;
-use pocketmine\resourcepacks\json\ManifestHeader;
-use pocketmine\resourcepacks\json\ManifestModuleEntry;
 use pocketmine\resourcepacks\ResourcePackException;
 use ref\api\addonsmanager\addons\Addons;
+use ref\api\addonsmanager\addons\json\Manifest;
+use ref\api\addonsmanager\addons\json\ManifestHeader;
+use ref\api\addonsmanager\addons\json\ManifestModuleEntry;
 
 use function file_get_contents;
 use function imagepng;
@@ -78,27 +78,28 @@ final class SimpleAddonsBuilder{
     }
 
     public function build() : Addons{
-        $this->files[Addons::MANIFEST_FILE] = Addons::manifestSerialize($this->generateManifest());
+        $this->files[Addons::MANIFEST_FILE] = json_encode($this->generateManifest(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $addons = new Addons($this->files);
         unset($this->files[Addons::MANIFEST_FILE]);
         return $addons;
     }
 
     private function generateManifest() : Manifest{
-        $manifest = new Manifest();
-        $manifest->format_version = 2;
-        $manifest->header = new ManifestHeader();
-        $manifest->header->name = $this->name;
-        $manifest->header->description = $this->description;
-        $manifest->header->uuid = $this->uuid;
-        $manifest->header->version = $this->version;
-        $manifest->header->min_engine_version = [1, 17, 0];
-        $moduleEntry = new ManifestModuleEntry();
-        $moduleEntry->type = $this->type === ResourcePackType::RESOURCES ? "resources" : "data";
-        $moduleEntry->uuid = "";
-        $moduleEntry->version = [1, 0, 0];
-        $manifest->modules = [$moduleEntry];
-
-        return $manifest;
+        return Manifest::create(
+            2,
+            new ManifestHeader(
+                $this->name,
+                $this->uuid,
+                $this->version,
+                $this->description
+            ),
+            [
+                new ManifestModuleEntry(
+                    $this->type === ResourcePackType::RESOURCES ? "resources" : "data",
+                    "",
+                    [1, 0, 0]
+                )
+            ]
+        );
     }
 }

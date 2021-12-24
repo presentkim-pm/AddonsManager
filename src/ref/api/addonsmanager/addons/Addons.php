@@ -31,14 +31,13 @@ use InvalidArgumentException;
 use JsonMapper;
 use JsonMapper_Exception as JsonMapperException;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
-use pocketmine\resourcepacks\json\Manifest;
 use pocketmine\resourcepacks\ResourcePackException;
 use Ramsey\Uuid\Uuid;
+use ref\api\addonsmanager\addons\json\Manifest;
 use RuntimeException;
 use stdClass;
 use ZipArchive;
 
-use function array_filter;
 use function array_keys;
 use function file_get_contents;
 use function gettype;
@@ -47,14 +46,12 @@ use function implode;
 use function json_encode;
 use function md5;
 use function preg_match;
-use function serialize;
 use function str_ends_with;
 use function strlen;
 use function substr;
 use function sys_get_temp_dir;
 use function tempnam;
 use function unlink;
-use function unserialize;
 
 class Addons{
     private const MEANINGLESS_UUID_REGEX = "/^[0\-]*$/";
@@ -129,7 +126,7 @@ class Addons{
                 $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
             }
         }
-        $manifestContents = self::manifestSerialize($this->manifest);
+        $manifestContents = json_encode($this->manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $this->files[self::MANIFEST_FILE] = $manifestContents;
         $archive->addFromString(self::MANIFEST_FILE, $manifestContents);
         $archive->setCompressionName(self::MANIFEST_FILE, ZipArchive::CM_DEFLATE64);
@@ -152,8 +149,7 @@ class Addons{
 
     /** Returns the Manifest object of the addons. */
     public function getManifest() : Manifest{
-        // HACK: Deserialize after serialization for deep copy
-        return unserialize(serialize($this->manifest), ['allowed_classes' => true]);
+        return clone $this->manifest;
     }
 
     /** Returns the human-readable name of the addons */
@@ -225,16 +221,5 @@ class Addons{
         $mapper->bExceptionOnMissingData = true;
 
         return $mapper->map($manifestJson, new Manifest());
-    }
-
-    public static function manifestSerialize(Manifest $manifest) : string{
-        return json_encode(array_filter([
-            "format_version" => $manifest->format_version,
-            "header" => $manifest->header,
-            "modules" => $manifest->modules,
-            "metadata" => $manifest->metadata,
-            "capabilities" => $manifest->capabilities,
-            "dependencies" => $manifest->dependencies
-        ], static fn(mixed $v) : bool => !empty($v)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 }
