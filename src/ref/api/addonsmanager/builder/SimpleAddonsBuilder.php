@@ -25,7 +25,7 @@
 
 declare(strict_types=1);
 
-namespace ref\api\addonsmanager\addons\builder;
+namespace ref\api\addonsmanager\builder;
 
 use GdImage;
 use pocketmine\network\mcpe\protocol\types\resourcepacks\ResourcePackType;
