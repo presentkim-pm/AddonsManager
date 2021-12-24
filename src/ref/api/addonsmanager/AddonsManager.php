@@ -38,6 +38,7 @@ use ref\api\addonsmanager\addons\FolderAddons;
 use ref\api\addonsmanager\addons\ZippedAddons;
 
 use function array_diff;
+use function array_merge;
 use function array_values;
 use function count;
 use function file_exists;
@@ -126,14 +127,17 @@ final class AddonsManager{
         return $this->resourcePacks[$id] ?? $this->behaviorPacks[$id] ?? null;
     }
 
+    /** @return Addons[] */
     public function getAllAddons() : array{
         return array_values(array_merge($this->resourcePacks, $this->behaviorPacks));
     }
 
+    /** @return Addons[] */
     public function getResourcePacks() : array{
         return $this->resourcePacks;
     }
 
+    /** @return Addons[] */
     public function getBehaviorPacks() : array{
         return $this->behaviorPacks;
     }
