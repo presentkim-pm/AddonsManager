@@ -126,6 +126,18 @@ final class AddonsManager{
         return $this->resourcePacks[$id] ?? $this->behaviorPacks[$id] ?? null;
     }
 
+    public function getAllAddons() : array{
+        return array_values(array_merge($this->resourcePacks, $this->behaviorPacks));
+    }
+
+    public function getResourcePacks() : array{
+        return $this->resourcePacks;
+    }
+
+    public function getBehaviorPacks() : array{
+        return $this->behaviorPacks;
+    }
+
     /**
      * @return ResourcePackInfoEntry[]
      * @internal
