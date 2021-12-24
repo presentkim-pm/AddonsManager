@@ -39,6 +39,7 @@ use stdClass;
 use ZipArchive;
 
 use function array_filter;
+use function array_keys;
 use function file_get_contents;
 use function gettype;
 use function hash;
@@ -52,6 +53,7 @@ use function strlen;
 use function substr;
 use function sys_get_temp_dir;
 use function tempnam;
+use function unlink;
 use function unserialize;
 
 class Addons{
@@ -66,6 +68,8 @@ class Addons{
     protected Manifest $manifest;
     protected int $type = ResourcePackType::INVALID;
 
+    /** @var array<string, string> innerPath => fileContents */
+    protected array $files = [];
     protected string $contents;
     protected string $sha256;
 
@@ -98,6 +102,7 @@ class Addons{
                 }catch(RuntimeException){
                 }
             }
+            $this->files[$innerPath] = $contents;
             $archive->addFromString($innerPath, $contents);
             $archive->setCompressionName($innerPath, ZipArchive::CM_DEFLATE64);
             $archive->setMtimeName($innerPath, 0);
@@ -124,21 +129,9 @@ class Addons{
                 $module->uuid = UUID::fromString(md5($fullContents . $key))->toString();
             }
         }
-
-        $archive->addFromString(self::MANIFEST_FILE, json_encode(array_filter([
-            "format_version" => $this->manifest->format_version,
-            "header" => array_filter([
-                "description" => $this->manifest->header->description ?? null,
-                "name" => $this->manifest->header->name ?? null,
-                "uuid" => $this->manifest->header->uuid ?? null,
-                "version" => $this->manifest->header->version ?? null,
-                "min_engine_version" => $this->manifest->header->min_engine_version ?? null,
-            ], static fn(mixed $v) : bool => !empty($v)),
-            "modules" => $this->manifest->modules,
-            "metadata" => $this->manifest->metadata,
-            "capabilities" => $this->manifest->capabilities,
-            "dependencies" => $this->manifest->dependencies
-        ], static fn(mixed $v) : bool => !empty($v)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $manifestContents = self::manifestSerialize($this->manifest);
+        $this->files[self::MANIFEST_FILE] = $manifestContents;
+        $archive->addFromString(self::MANIFEST_FILE, $manifestContents);
         $archive->setCompressionName(self::MANIFEST_FILE, ZipArchive::CM_DEFLATE64);
         $archive->setMtimeName(self::MANIFEST_FILE, 0);
         $archive->close();
@@ -203,6 +196,16 @@ class Addons{
      */
     public function getChunk(int $start, int $length) : string{
         return substr($this->contents, $start, $length);
+    }
+
+    /** @return string[] */
+    public function getFileList() : array{
+        return array_keys($this->files);
+    }
+
+    /** Returns the contents of the specified file. */
+    public function getFile(string $innerPath) : ?string{
+        return $this->files[$innerPath] ?? null;
     }
 
     /**
