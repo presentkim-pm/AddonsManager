@@ -1,0 +1,8 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/refteams/refAddonsManager
+build-by-default: true
+branches:
+- pm4/main
+projects:
+  refAddonsManager:
+    path: ""
+...
