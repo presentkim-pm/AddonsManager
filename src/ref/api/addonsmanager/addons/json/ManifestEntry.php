@@ -30,21 +30,19 @@ use JsonSerializable;
 
 use function array_filter;
 use function array_map;
+use function get_object_vars;
 use function is_array;
 use function is_object;
 
 abstract class ManifestEntry implements JsonSerializable{
     /** JSON serialize with exclude empty values */
     public function jsonSerialize() : array{
-        return array_filter((array) $this, static fn(mixed $value) : bool => $value !== null && $value !== "");
+        return array_filter(get_object_vars($this), static fn(mixed $value) : bool => $value !== "" && $value !== null);
     }
 
     /** Perform a deep copy on clone */
     public function __clone() : void{
-        foreach(((array) $this) as $key => $value){
-            if($value === "" || $value === null){
-                continue;
-            }
+        foreach($this->jsonSerialize() as $key => $value){
             if(is_object($value)){
                 $this->$key = clone $value;
             }elseif(is_array($value)){
