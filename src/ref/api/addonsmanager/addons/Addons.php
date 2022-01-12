@@ -39,10 +39,12 @@ use stdClass;
 use ZipArchive;
 
 use function array_keys;
+use function count;
 use function file_get_contents;
 use function gettype;
 use function hash;
 use function implode;
+use function is_array;
 use function json_encode;
 use function md5;
 use function preg_match;
@@ -110,7 +112,7 @@ class Addons{
         if(preg_match(self::MEANINGLESS_UUID_REGEX, $this->manifest->header->uuid) === 1){
             $this->manifest->header->uuid = Uuid::fromString(md5($fullContents))->toString();
         }
-        if(empty($this->manifest->modules)){
+        if(!isset($this->manifest->modules) || !is_array($this->manifest->modules) || count($this->manifest->modules) === 0){
             throw new ResourcePackException("Addons must have at least one module. (addons uuid: {$this->manifest->header->uuid})");
         }
         foreach($this->manifest->modules as $key => $module){
