@@ -46,7 +46,7 @@ final class SimpleAddonsBuilder{
     /** @var array<string, string> */
     private array $files = [];
 
-    /** @param $version array{int, int, int} */
+    /** @param array{int, int, int} $version */
     public function __construct(
         private int $type,
         private string $name,
