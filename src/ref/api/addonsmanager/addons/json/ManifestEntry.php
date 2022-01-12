@@ -32,6 +32,7 @@ use function array_filter;
 use function array_map;
 use function is_array;
 use function is_object;
+use function var_dump;
 
 abstract class ManifestEntry implements JsonSerializable{
     /** JSON serialize with exclude empty values */
@@ -41,7 +42,7 @@ abstract class ManifestEntry implements JsonSerializable{
 
     /** Perform a deep copy on clone */
     public function __clone() : void{
-        foreach($this as $key => $value){
+        foreach(((array) $this) as $key => $value){
             if(empty($value)){
                 continue;
             }
