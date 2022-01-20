@@ -28,21 +28,21 @@ namespace ref\api\addonsmanager\addons\json;
 
 final class ManifestHeader extends ManifestEntry{
     /**
-     * @param string                            $name
-     * @param string                            $uuid
-     * @param int[]                             $version
-     * @param string|null                       $description
-     * @param int[]|null                        $min_engine_version
+     * @param string                       $name
+     * @param string                       $uuid
+     * @param int[]                        $version
+     * @param string|null                  $description
+     * @param int[]|null                   $min_engine_version
      *
-     * @phpstan-param array{int, int, int}      $version
-     * @phpstan-param array{int, int, int}|null $min_engine_version
+     * @phpstan-param array{int, int, int} $version
+     * @phpstan-param array{int, int, int} $min_engine_version
      */
     public function __construct(
         public string $name = " ",
         public string $uuid = "",
         public array $version = [1, 0, 0],
         public ?string $description = null,
-        public ?array $min_engine_version = null
+        public array $min_engine_version = [1, 16, 0]
     ){
     }
 }
