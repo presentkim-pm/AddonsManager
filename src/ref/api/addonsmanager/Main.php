@@ -58,6 +58,7 @@ final class Main extends PluginBase implements Listener{
         "experimental_molang_features" => true, // Experimental Molang Features
         "vanilla_experiments" => true, // Vanilla Experiments
         "data_driven_biomes" => true, // Creation of Custom Biomes
+        'wild_update' => true, // Wild Update
     ];
 
     private AddonsManager $addonsManager;
