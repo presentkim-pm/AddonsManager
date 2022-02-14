@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace ref\api\addonsmanager;
 
+use Closure;
 use pocketmine\event\Listener;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\server\DataPacketSendEvent;
@@ -36,6 +37,7 @@ use pocketmine\network\mcpe\protocol\ResourcePackDataInfoPacket;
 use pocketmine\network\mcpe\protocol\ResourcePacksInfoPacket;
 use pocketmine\network\mcpe\protocol\ResourcePackStackPacket;
 use pocketmine\network\mcpe\protocol\StartGamePacket;
+use pocketmine\network\mcpe\protocol\types\Experiments;
 use pocketmine\plugin\PluginBase;
 use ref\api\addonsmanager\addons\Addons;
 
@@ -49,8 +51,8 @@ use function strpos;
 use function substr;
 
 final class Main extends PluginBase implements Listener{
-    private const MAX_CHUNK_SIZE = 128 * 1024; //128KB
-    private const OVERRIDDEN_EXPERIMENTS = [
+    public const MAX_CHUNK_SIZE = 128 * 1024; //128KB
+    public const OVERRIDDEN_EXPERIMENTS = [
         "scripting" => true, // Additional Modding Capabilities
         "upcoming_creator_features" => true, // Upcoming Creator Features
         "gametest" => true, // Enable GameTest Framework
@@ -93,14 +95,16 @@ final class Main extends PluginBase implements Listener{
                 }
             }elseif($packet instanceof StartGamePacket){
                 $experiments = $packet->levelSettings->experiments;
-                /**
-                 * @noinspection PhpExpressionResultUnusedInspection
-                 * HACK : Modifying properties using public constructors
-                 */
-                $experiments->__construct(
-                    array_merge($experiments->getExperiments(), self::OVERRIDDEN_EXPERIMENTS),
-                    $experiments->hasPreviouslyUsedExperiments()
-                );
+                Closure::bind( //HACK: Closure bind hack to access inaccessible members
+                    closure: static function() use ($experiments) : void{
+                        $experiments->experiments = array_merge(
+                            $experiments->experiments,
+                            Main::OVERRIDDEN_EXPERIMENTS
+                        );
+                    },
+                    newThis: null,
+                    newScope: Experiments::class
+                )();
             }
         }
     }
