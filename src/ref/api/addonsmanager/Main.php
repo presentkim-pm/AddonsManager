@@ -95,16 +95,11 @@ final class Main extends PluginBase implements Listener{
                 }
             }elseif($packet instanceof StartGamePacket){
                 $experiments = $packet->levelSettings->experiments;
-                Closure::bind( //HACK: Closure bind hack to access inaccessible members
-                    closure: static function() use ($experiments) : void{
-                        $experiments->experiments = array_merge(
-                            $experiments->experiments,
-                            Main::OVERRIDDEN_EXPERIMENTS
-                        );
-                    },
-                    newThis: null,
-                    newScope: Experiments::class
-                )();
+                $experimentsArray = $experiments->getExperiments();
+                foreach(Main::OVERRIDDEN_EXPERIMENTS as $experiment => $enabled){
+                    $experimentsArray[$experiment] = $enabled;
+                }
+                $packet->levelSettings->experiments = new Experiments($experimentsArray, $experiments->hasPreviouslyUsedExperiments());
             }
         }
     }
