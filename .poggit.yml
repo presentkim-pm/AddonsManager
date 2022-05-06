@@ -1,8 +1,11 @@
 --- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/refteams/refAddonsManager
 build-by-default: true
 branches:
-- pm4/main
+  - pm4/main
 projects:
   refAddonsManager:
     path: ""
+    libs:
+      - src: presentkim-pm/remove-plugin-data-dir-trait
+        version: ^1.0.0
 ...

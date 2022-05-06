@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace ref\api\addonsmanager;
 
-use Closure;
+use kim\present\traits\removeplugindatadir\RemovePluginDataDirTrait;
 use pocketmine\event\Listener;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\server\DataPacketSendEvent;
@@ -41,16 +41,14 @@ use pocketmine\network\mcpe\protocol\types\Experiments;
 use pocketmine\plugin\PluginBase;
 use ref\api\addonsmanager\addons\Addons;
 
-use function array_merge;
 use function ceil;
 use function count;
-use function file_exists;
-use function rmdir;
-use function scandir;
 use function strpos;
 use function substr;
 
 final class Main extends PluginBase implements Listener{
+    use RemovePluginDataDirTrait;
+
     public const MAX_CHUNK_SIZE = 128 * 1024; //128KB
     public const OVERRIDDEN_EXPERIMENTS = [
         "scripting" => true, // Additional Modding Capabilities
@@ -64,16 +62,11 @@ final class Main extends PluginBase implements Listener{
 
     protected function onLoad() : void{
         $this->addonsManager = AddonsManager::getInstance();
+        $this->removePluginDataDir();
     }
 
     protected function onEnable() : void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
-
-        //Remove unnecessary plugin data folder
-        $dataFolder = $this->getDataFolder();
-        if(file_exists($dataFolder) && count(scandir($dataFolder)) === 2){
-            rmdir($dataFolder);
-        }
     }
 
     /** @priority LOWEST */
