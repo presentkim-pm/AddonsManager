@@ -51,14 +51,11 @@ use function substr;
 final class Main extends PluginBase implements Listener{
     private const MAX_CHUNK_SIZE = 128 * 1024; //128KB
     private const OVERRIDDEN_EXPERIMENTS = [
-        "scripting" => true, // Additional Modding Capabilities
         "upcoming_creator_features" => true, // Upcoming Creator Features
         "gametest" => true, // Enable GameTest Framework
         "data_driven_items" => true, // Holiday Creator Features
         "experimental_molang_features" => true, // Experimental Molang Features
-        "vanilla_experiments" => true, // Vanilla Experiments
         "data_driven_biomes" => true, // Creation of Custom Biomes
-        'wild_update' => true, // Wild Update
         'spectator_mode' => true, // Spectator Mode
     ];
 
